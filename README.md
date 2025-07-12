@@ -30,7 +30,7 @@ While global mapping solutions exist, many small cities lack tailored routing pl
 ## 📁 Project Structure
 
 <pre>
-```none
+
 PathPilot/
 ├── data/                  # Stores raw and processed map/graph data
 │   └── gandhinagar.graphml
@@ -46,5 +46,5 @@ PathPilot/
 ├── requirements.txt
 ├── README.md
 └── .python-version
-```
+
 </pre>
