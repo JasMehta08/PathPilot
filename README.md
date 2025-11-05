@@ -1,10 +1,18 @@
-# 🛰️ PathPilot – Smart City Road Navigator
+# PathPilot – Smart City Road Navigator
 
 **PathPilot** is a smart, map-based routing engine tailored for cities using real-world data from **OpenStreetMap**. It enables graph-based shortest path finding (via **A\*** algorithm), and is designed to support machine learning–powered ETA prediction. Built using Python, this project emphasizes geospatial intelligence and algorithmic routing.
 
 ---
 
-## 🌍 Project Goal
+## Demo
+
+![Demo Image](/docs/Demo_image.png)
+
+Explore the interactive demo showcasing PathPilot's routing capabilities on a sample city map. Visualize shortest paths, algorithm comparisons, and performance metrics in real-time.
+
+---
+
+## Project Goal
 
 While global mapping solutions exist, many cities lack tailored routing platforms. PathPilot addresses this by:
 
@@ -16,7 +24,7 @@ While global mapping solutions exist, many cities lack tailored routing platform
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Area            | Tools & Libraries                       |
 |-----------------|---------------------------------------|
@@ -28,7 +36,7 @@ While global mapping solutions exist, many cities lack tailored routing platform
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 <pre>PathPilot/
 ├── data/                  # Stores raw and processed map/graph data (auto-saved as .graphml)
@@ -53,10 +61,20 @@ While global mapping solutions exist, many cities lack tailored routing platform
 
 ---
 
-## 🚦 Usage
+## Usage
+
+### Quick Start
+
+Run the benchmark for Mumbai city with:
+
+```bash
+python different_cities/mumbai_map.py
+```
 
 ### 1. **Install dependencies**
 ```bash
+python3 -m venv env
+source env/bin/activate  # On Windows use `env\Scripts\activate`
 pip install -r requirements.txt
 ```
 
@@ -82,7 +100,7 @@ python different_cities/gandhinagar_map.py
 
 ---
 
-## 🧠 Extending for Machine Learning
+## Extending for Machine Learning
 - The project is structured to allow integration of ML models for ETA prediction and dynamic edge weighting.
 - See `notebooks/eta_prediction.ipynb` (template) for starting ML experiments.
 - ML model input: simulated route features such as distance, node count, and edge metadata.
@@ -91,11 +109,19 @@ python different_cities/gandhinagar_map.py
 
 ---
 
-## 📝 Notes
+## Development Notes
 - **Do not re-download city maps every run.** Download once, then comment out the download lines to avoid API rate limits and speed up experiments.
 - All scripts are modular and can be extended for new cities or algorithms.
+- Contributions should maintain modularity and clarity for ease of extension.
 
 ---
 
-## 📢 Contributing
-Pull requests and issues are welcome! Please document new scripts and update the README as needed.
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+## Contributing
+
+Contributions are welcome! Please fork the repository and submit pull requests for bug fixes, improvements, or new features. For major changes, open an issue first to discuss the proposed changes. Ensure code style consistency and include relevant tests or documentation updates.

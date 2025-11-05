@@ -1,5 +1,10 @@
 import heapq
 import math
+import logging
+import osmnx as ox
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def haversine_distance(coord1, coord2):
     """Calculates the Haversine distance between two (lat, lon) tuples."""
@@ -15,10 +20,10 @@ def haversine_distance(coord1, coord2):
 def astar_path(graph, start, goal, heuristic, weight='length'):
     """
     Finds the shortest path using the A* algorithm and counts visited nodes.
-    Returns: A tuple of (path, nodes_visited).
+    Returns: A tuple of (path, total_distance, nodes_visited).
     """
     open_set = []
-    heapq.heappush(open_set, (heuristic(start), start))
+    heapq.heappush(open_set, (heuristic(start, goal), start))
     open_set_hash = {start}
 
     came_from = {}
@@ -39,7 +44,9 @@ def astar_path(graph, start, goal, heuristic, weight='length'):
                 current = came_from[current]
             path.append(start)
             path.reverse()
-            return path, nodes_visited
+            total_distance = g_score[goal]
+            logger.info(f"A* found path with distance {total_distance} after visiting {nodes_visited} nodes.")
+            return path, total_distance, nodes_visited
 
         for neighbor in graph.neighbors(current):
             edge_data = min(graph.get_edge_data(current, neighbor).values(), key=lambda e: e.get(weight, float('inf')))
@@ -49,11 +56,12 @@ def astar_path(graph, start, goal, heuristic, weight='length'):
             if tentative_g_score < g_score.get(neighbor, float('inf')):
                 came_from[neighbor] = current
                 g_score[neighbor] = tentative_g_score
-                f_score = tentative_g_score + heuristic(neighbor)
+                f_score = tentative_g_score + heuristic(neighbor, goal)
                 if neighbor not in open_set_hash:
                     heapq.heappush(open_set, (f_score, neighbor))
                     open_set_hash.add(neighbor)
-    return None, nodes_visited
+    logger.info(f"A* did not find a path after visiting {nodes_visited} nodes.")
+    return None, float('inf'), nodes_visited
 
 def dijkstra_path(graph, start, goal, weight='length'):
     """
@@ -87,6 +95,7 @@ def dijkstra_path(graph, start, goal, weight='length'):
                 current = came_from[current]
             path.append(start)
             path.reverse()
+            logger.info(f"Dijkstra found path with distance {g_score[goal]} after visiting {nodes_visited} nodes.")
             return path, nodes_visited
 
         for neighbor in graph.neighbors(current):
@@ -100,4 +109,18 @@ def dijkstra_path(graph, start, goal, weight='length'):
                 if neighbor not in open_set_hash:
                     heapq.heappush(open_set, (tentative_g_score, neighbor))
                     open_set_hash.add(neighbor)
+    logger.info(f"Dijkstra did not find a path after visiting {nodes_visited} nodes.")
     return None, nodes_visited
+
+def visualize_path(graph, path):
+    """
+    Visualizes the given path on the graph using OSMnx.
+    """
+    if not path:
+        logger.warning("No path to visualize.")
+        return
+    try:
+        fig, ax = ox.plot_graph_route(graph, path, route_linewidth=4, node_size=0, bgcolor='k')
+        logger.info("Path visualization complete.")
+    except Exception as e:
+        logger.error(f"Error visualizing path: {e}")
