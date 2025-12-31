@@ -1,0 +1,15 @@
+fastapi
+python-multipart
+uvicorn
+networkx
+osmnx
+geopandas
+scikit-learn
+opencv-python
+torch
+transformers
+Pillow
+plyfile
+pytest
+httpx
+pytest-asyncio

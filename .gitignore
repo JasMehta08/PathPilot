@@ -1,32 +1,30 @@
+# General
+.DS_Store
+.env
+*.log
+
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-
-# Jupyter
-.ipynb_checkpoints/
-
-# Environments
-.venv/
+*.pyc
 venv/
-.env
+api/venv/
+.pytest_cache/
 
-# System
-.DS_Store
+# Node
+node_modules/
+web/node_modules/
+dist/
+web/dist/
+build/
 
-# IDEs
+# Data & Models
+data/uploads/*
+!data/uploads/.gitkeep
+data/models/*
+!data/models/.gitkeep
+data/*.graphml
+temp_process/
+
+# IDE
 .vscode/
 .idea/
-
-# Data and cache
-data/
-cache/
-
-# Large/generated files
-*.graphml
-*.json
-*.log
-*.sqlite3
-*.db
-*.bak
-*.tmp 

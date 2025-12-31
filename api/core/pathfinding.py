@@ -6,6 +6,13 @@ import osmnx as ox
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+def euclidean_distance(coord1, coord2):
+    """
+    Calculates the Euclidean distance between two (x, y) tuples.
+    Assumes coordinates are projected (e.g., UTM in meters).
+    """
+    return math.sqrt((coord1[0] - coord2[0])**2 + (coord1[1] - coord2[1])**2)
+
 def haversine_distance(coord1, coord2):
     """Calculates the Haversine distance between two (lat, lon) tuples."""
     R = 6371e3  # Earth radius in meters
