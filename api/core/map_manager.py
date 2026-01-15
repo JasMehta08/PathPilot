@@ -10,6 +10,10 @@ MAP_DATA_PATH = os.path.join(BASE_DIR, DATA_DIR)
 
 logger = logging.getLogger(__name__)
 
+# Configure OSMnx to retrieve useful tags for routing
+ox.settings.useful_tags_way = list(set(ox.settings.useful_tags_way + ['surface', 'maxspeed', 'lanes', 'width']))
+
+
 def get_map(place_name: str = None, network_type: str = 'drive', bbox: tuple = None, optimize: bool = True):
     """
     Downloads or loads a map from the local cache.

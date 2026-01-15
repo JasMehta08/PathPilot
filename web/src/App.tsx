@@ -1,29 +1,116 @@
 import { useState, useCallback, Suspense, lazy } from 'react';
-import CampusMap from './components/CampusMap';
-import type { RouteResponse } from './components/CampusMap';
+import CampusMap, { type RouteResponse } from './components/CampusMap';
+import TrafficControl from './components/TrafficControl';
+import type { LatLngTuple } from 'leaflet';
 import './index.css';
 
 // Lazy load 3D component
 const Campus3D = lazy(() => import('./components/Campus3D'));
 
+// Existing interfaces...
+interface RouteRequest {
+  start_lat: number;
+  start_lon: number;
+  end_lat: number;
+  end_lon: number;
+  weight: string;
+}
+
+interface Point {
+  lat: number;
+  lng: number;
+}
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 function App() {
   const [routeData, setRouteData] = useState<RouteResponse | null>(null);
-  const [points, setPoints] = useState({ start: false, end: false });
+  const [points, setPoints] = useState<{ start: Point | null; end: Point | null }>({ start: null, end: null });
   const [darkMode, setDarkMode] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
 
+  // Traffic State
+  const [trafficIntensity, setTrafficIntensity] = useState<'low' | 'medium' | 'high'>('low');
+  const [isSimulatingTraffic, setIsSimulatingTraffic] = useState(false);
 
   const [modelUrl, setModelUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string>("");
 
-  const handlePointsUpdate = useCallback((start: boolean, end: boolean) => {
-    setPoints({ start, end });
+
+
+  const handlePointsUpdate = useCallback((start: LatLngTuple | null, end: LatLngTuple | null) => {
+    // Convert [lat, lon] tuple to Point object {lat, lng} for consistency if needed, 
+    // or just change state to use tuples. Let's switch state to use Points to match existing access.
+
+    const startPoint = start ? { lat: start[0], lng: start[1] } : null;
+    const endPoint = end ? { lat: end[0], lng: end[1] } : null;
+
+    setPoints({ start: startPoint, end: endPoint });
   }, []);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
+    if (!darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  // Traffic Handler
+  const handleTrafficChange = async (intensity: 'low' | 'medium' | 'high') => {
+    setTrafficIntensity(intensity);
+    setIsSimulatingTraffic(true);
+    try {
+      await fetch(`${API_URL}/traffic/simulate?intensity=${intensity}`, { method: 'POST' });
+      // If we have a route, re-calculate it to show impact
+      if (points.start && points.end) {
+        handleCalculateRoute();
+      }
+    } catch (error) {
+      console.error("Traffic simulation failed:", error);
+    } finally {
+      setIsSimulatingTraffic(false);
+    }
+  };
+
+  const handleCalculateRoute = async () => {
+    if (!points.start || !points.end) {
+      alert("Please select both start and end points on the map");
+      return;
+    }
+
+    try {
+      // Use time-based weighting if traffic is significant (medium/high), 
+      // or just to respect the traffic simulation in general.
+      // Actually, we should always use 'weight_time' if we want to see traffic effects.
+      // But maybe 'length' is default? Let's switch to 'weight_time' (our custom traffic weight)
+      // when traffic controls are active or just always for "Smart Routing".
+      const weightType = 'weight_time'; // Always use our smart weight for now
+
+      const req: RouteRequest = {
+        start_lat: points.start.lat,
+        start_lon: points.start.lng,
+        end_lat: points.end.lat,
+        end_lon: points.end.lng,
+        weight: weightType
+      };
+
+      const res = await fetch(`${API_URL}/route`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req)
+      });
+
+      if (!res.ok) throw new Error("Route calculation failed");
+      const data = await res.json();
+      setRouteData(data);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to calculate route");
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,7 +125,7 @@ function App() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const uploadRes = await fetch("http://localhost:8000/upload", {
+      const uploadRes = await fetch(`${API_URL}/upload`, {
         method: "POST",
         body: formData
       });
@@ -48,7 +135,7 @@ function App() {
 
       // 2. Process
       setUploadStatus("Processing Splat (this may take a moment)...");
-      const processRes = await fetch("http://localhost:8000/process", {
+      const processRes = await fetch(`${API_URL}/process`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ video_filename: uploadData.filename })
@@ -57,7 +144,7 @@ function App() {
       if (!processRes.ok) throw new Error("Processing failed");
       const processData = await processRes.json();
 
-      setModelUrl(processData.model_url);
+      setModelUrl(`${API_URL}/models/${processData.model_url.split('/').pop()}`);
       setUploadStatus("Ready!");
 
     } catch (err: any) {
@@ -72,28 +159,28 @@ function App() {
     <div className={`dashboard-container ${darkMode ? 'dark-mode' : ''}`}>
       {/* Header */}
       <header className="header">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 logo-container">
           {/* Logo Icon */}
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent-color)' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="logo-icon">
             <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
             <line x1="8" y1="2" x2="8" y2="18"></line>
             <line x1="16" y1="6" x2="16" y2="22"></line>
           </svg>
           <h1>PathPilot</h1>
-          <span style={{ fontSize: '0.8rem', background: 'var(--accent-bg)', color: 'var(--accent-color)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+          <span className="badge">
             Campus Pilot
           </span>
         </div>
 
         <div className="flex items-center gap-4">
-          <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+          <div className="location-text">
             Gandhinagar
           </div>
           {/* Settings Wheel */}
-          <div className="relative" style={{ position: 'relative' }}>
+          <div className="relative setting-container">
             <button
               onClick={() => setShowSettings(!showSettings)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', padding: '4px' }}
+              className="settings-btn"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={showSettings ? "animate-spin-slow" : ""}>
                 <circle cx="12" cy="12" r="3"></circle>
@@ -102,35 +189,11 @@ function App() {
             </button>
             {/* Settings Dropdown */}
             {showSettings && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: '0.5rem',
-                backgroundColor: 'var(--bg-secondary)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '8px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                padding: '0.5rem',
-                zIndex: 50,
-                minWidth: '150px'
-              }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', padding: '0.5rem' }}>Settings</div>
+              <div className="settings-dropdown">
+                <div className="settings-title">Settings</div>
                 <button
                   onClick={toggleDarkMode}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    width: '100%',
-                    padding: '0.5rem',
-                    fontSize: '0.9rem',
-                    color: 'var(--text-primary)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    textAlign: 'left'
-                  }}
+                  className="theme-toggle-btn"
                 >
                   {darkMode ? (
                     <>
@@ -155,68 +218,46 @@ function App() {
 
         {/* Sidebar Controls */}
         <aside className="sidebar">
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-primary)' }}>Navigation</h2>
+          <h2 className="sidebar-title">Navigation</h2>
 
           {/* View Mode Toggle */}
-          <div style={{ display: 'flex', background: 'var(--bg-card)', padding: '4px', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid var(--border-color)' }}>
+          <div className="view-mode-toggle">
             <button
               onClick={() => setViewMode('2d')}
-              style={{
-                flex: 1,
-                padding: '6px',
-                borderRadius: '6px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: 500,
-                background: viewMode === '2d' ? 'var(--accent-bg)' : 'transparent',
-                color: viewMode === '2d' ? 'var(--accent-color)' : 'var(--text-secondary)',
-                transition: 'all 0.2s'
-              }}
+              className={`toggle-btn ${viewMode === '2d' ? 'active' : ''}`}
             >
               2D Map
             </button>
             <button
               onClick={() => setViewMode('3d')}
-              style={{
-                flex: 1,
-                padding: '6px',
-                borderRadius: '6px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: 500,
-                background: viewMode === '3d' ? 'var(--accent-bg)' : 'transparent',
-                color: viewMode === '3d' ? 'var(--accent-color)' : 'var(--text-secondary)',
-                transition: 'all 0.2s'
-              }}
+              className={`toggle-btn ${viewMode === '3d' ? 'active' : ''}`}
             >
               3D View
             </button>
           </div>
 
           {viewMode === '3d' && (
-            <div className="stat-card animate-fade-in" style={{ marginBottom: '1.5rem', borderColor: 'var(--accent-color)' }}>
-              <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+            <div className="stat-card animate-fade-in card-border">
+              <h3 className="card-title">
                 3D Scanner
               </h3>
-              <div style={{ padding: '0.5rem 0' }}>
+              <div className="upload-section">
                 <input
                   type="file"
                   accept="video/mp4,video/quicktime"
                   onChange={handleFileUpload}
                   disabled={isProcessing}
-                  style={{ fontSize: '0.8rem', width: '100%', color: 'var(--text-primary)' }}
+                  className="file-input"
                 />
               </div>
               {isProcessing && (
-                <div style={{ fontSize: '0.8rem', color: 'var(--accent-color)', fontWeight: 500 }}>
-                  <span className="animate-spin-slow" style={{ display: 'inline-block', marginRight: '5px' }}>⟳</span>
+                <div className="processing-status">
+                  <span className="animate-spin-slow spinner">⟳</span>
                   {uploadStatus}
                 </div>
               )}
               {uploadStatus && !isProcessing && (
-                <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '5px' }}>
+                <div className="success-status">
                   ✓ {uploadStatus}
                 </div>
               )}
@@ -224,17 +265,17 @@ function App() {
           )}
 
           {viewMode === '2d' && (
-            <div style={{ marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+            <div className="status-section">
+              <div className="status-item">
                 <span className={`status-dot ${points.start ? 'status-active-green' : 'status-inactive'}`}></span>
                 <span>Start Point</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', color: 'var(--text-primary)' }}>
+              <div className="status-item">
                 <span className={`status-dot ${points.end ? 'status-active-red' : 'status-inactive'}`}></span>
                 <span>End Point</span>
               </div>
 
-              <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              <p className="instruction-text">
                 {!points.start ? "Click map to set Start." : !points.end ? "Click map to set End." : "Calculating route..."}
               </p>
             </div>
@@ -242,57 +283,84 @@ function App() {
 
           {viewMode === '2d' && routeData ? (
             <div className="stat-card animate-fade-in">
-              <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+              <h3 className="card-title">
                 Route Details
               </h3>
-              <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {(routeData.total_distance_meters / 1000).toFixed(2)} <span style={{ fontSize: '1rem', fontWeight: 400 }}>km</span>
+              <div className="route-distance">
+                {(routeData.total_distance_meters / 1000).toFixed(2)} <span className="unit">km</span>
               </div>
-              <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                <span style={{ fontWeight: 600 }}>{routeData.nodes_visited}</span> graph nodes analyzed
+              <div className="route-nodes">
+                <span className="font-semibold">{routeData.nodes_visited}</span> graph nodes analyzed
+              </div>
+              <div className="route-alternatives" style={{ marginTop: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                <span className="font-semibold">{routeData.alternatives?.length || 1}</span> routes found
               </div>
             </div>
           ) : null}
 
           {viewMode === '2d' && !routeData && (
-            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', border: '2px dashed var(--border-color)', borderRadius: '8px' }}>
+            <div className="empty-state">
               Select points to view stats
             </div>
           )}
 
-          <div style={{ marginTop: 'auto' }}>
-            <h3 style={{ fontSize: '0.9rem', fontWeight: 0, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Instructions</h3>
-            <ul style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', paddingLeft: '1.2rem' }}>
-              {viewMode === '2d' ? (
-                <>
-                  <li><b>Left Click</b>: Set Points</li>
-                  <li><b>Double Click</b>: Clear Map</li>
-                </>
-              ) : (
-                <>
-                  <li>Upload an .mp4 video</li>
-                  <li>Wait for processing</li>
-                </>
-              )}
-            </ul>
+          <div className="mt-auto">
+            {routeData && routeData.instructions && routeData.instructions.length > 0 ? (
+              <div className="card" style={{ marginTop: '1rem', maxHeight: '30vh', overflowY: 'auto' }}>
+                <h3 className="card-title">Turn-by-Turn</h3>
+                <ul className="instructions-list">
+                  {routeData.instructions.map((step, idx) => (
+                    <li key={idx} style={{ padding: '4px 0', borderBottom: '1px solid var(--border-color)' }}>
+                      {idx + 1}. {step}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <>
+                <h3 className="instructions-title">Instructions</h3>
+                <ul className="instructions-list">
+                  {viewMode === '2d' ? (
+                    <>
+                      <li><b>Left Click</b>: Set Points</li>
+                      <li><b>Double Click</b>: Clear Map</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>Upload an .mp4 video</li>
+                      <li>Wait for processing</li>
+                    </>
+                  )}
+                </ul>
+              </>
+            )}
           </div>
+
         </aside>
 
         {/* Map Container */}
-        <section className="map-wrapper" style={{ position: 'relative' }}>
+        <section className="map-wrapper relative-pos">
           {viewMode === '2d' ? (
-            <CampusMap
-              onRouteUpdate={setRouteData}
-              onPointsUpdate={handlePointsUpdate}
-              darkMode={darkMode}
-            />
+            <>
+              <CampusMap
+                onRouteUpdate={setRouteData}
+                onPointsUpdate={handlePointsUpdate}
+                darkMode={darkMode}
+              />
+              <div style={{ position: 'absolute', top: '10px', left: '60px', zIndex: 1000, width: '300px' }}>
+                <TrafficControl
+                  intensity={trafficIntensity}
+                  onIntensityChange={handleTrafficChange}
+                  isSimulating={isSimulatingTraffic}
+                />
+              </div>
+            </>
           ) : (
-            <Suspense fallback={<div className="flex items-center justify-center h-full text-white bg-black">Loading 3D Engine...</div>}>
+            <Suspense fallback={<div className="loading-3d">Loading 3D Engine...</div>}>
               <Campus3D modelUrl={modelUrl || undefined} />
             </Suspense>
           )}
         </section>
-
       </main>
     </div>
   );

@@ -141,3 +141,216 @@ body {
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out;
 }
+
+/* New Classes extracted from inline styles */
+.logo-container {
+  color: var(--accent-color);
+}
+
+.logo-icon {
+  color: var(--accent-color);
+}
+
+.badge {
+  font-size: 0.8rem;
+  background: var(--accent-bg);
+  color: var(--accent-color);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.location-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.setting-container {
+  position: relative;
+}
+
+.settings-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  padding: 4px;
+}
+
+.settings-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  z-index: 50;
+  min-width: 150px;
+}
+
+.settings-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 0.5rem;
+}
+
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sidebar-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.view-mode-toggle {
+  display: flex;
+  background: var(--bg-card);
+  padding: 4px;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 6px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.toggle-btn.active {
+  background: var(--accent-bg);
+  color: var(--accent-color);
+}
+
+.card-border {
+  border-color: var(--accent-color);
+}
+
+.card-title {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.upload-section {
+  padding: 0.5rem 0;
+}
+
+.file-input {
+  font-size: 0.8rem;
+  width: 100%;
+  color: var(--text-primary);
+}
+
+.processing-status {
+  font-size: 0.8rem;
+  color: var(--accent-color);
+  font-weight: 500;
+}
+
+.spinner {
+  display: inline-block;
+  margin-right: 5px;
+}
+
+.success-status {
+  font-size: 0.8rem;
+  color: #10b981;
+  margin-top: 5px;
+}
+
+.status-section {
+  margin-bottom: 1.5rem;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.instruction-text {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.route-distance {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.unit {
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.route-nodes {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+}
+
+.mt-auto {
+  margin-top: auto;
+}
+
+.instructions-title {
+  font-size: 0.9rem;
+  font-weight: 0;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.instructions-list {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding-left: 1.2rem;
+}
+
+.relative-pos {
+  position: relative;
+}
+
+.loading-3d {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: white;
+  background: black;
+}
